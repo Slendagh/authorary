@@ -69,8 +69,9 @@
                 </button>
             </div>
             <!--end of search bar-->
-            <div id="response" v-bind:style="{display: computedDisplay }">
-                <div id="">
+            <div class="text-center">{{ error ?? ''}}</div>
+            <div v-bind:style="{display: computedDisplay }">
+                <div>
                     <figure class="overflow-hidden shadow-lg rounded-xl p-8">
                         <img class="w-32 h-32 rounded-full mx-auto" :src="'https://covers.openlibrary.org/a/id/'+profile_img+'-M.jpg'" alt="" width="384" height="512">
                         <div class="pt-6 text-center space-y-4">
@@ -132,7 +133,8 @@
                         death_date: "",
                         wiki_url: "",
                         top_work:"",
-                        profile_img:""
+                        profile_img:"",
+                        error:""
                     }
                 },
                 methods:{
@@ -140,46 +142,54 @@
                         const url = "https://openlibrary.org/search/authors.json?q="+this.author;
                         var key ="";
                         axios.get(url).then(response => {
-                            //styles
-                            this.display= "inline-block";
-                            //end styles
+                            if(response.data.docs[0]){
+                                //styles
+                                this.display= "inline-block";
+                                //end styles
 
-                            key = response.data.docs[0].key
-                            this.top_work = response.data.docs[0].top_work;
-                            axios.get("https://openlibrary.org/authors/"+key+"/works.json").then(final_response => {
-                                this.entries = final_response.data.entries;
-                                this.num = this.entries.length;
-                                this.entries_array = new Array();
-                                for(let i=0; i< this.num; i++){
-                                    let entries_object = new Object();
-                                    if (Object.values(entries_object).indexOf(this.entries[i].title) <= -1){
-                                        entries_object.title = this.entries[i].title;
-                                        entries_object.cover = this.entries[i].covers;
-                                        this.entries_array.push(entries_object);
-                                    }
-                                }
-                            })
-                            axios.get("https://openlibrary.org/authors/"+key+".json").then(bio_response => {
-                                if(bio_response != 'undefined' || bio_response != '' ){
-                                    if(bio_response.data.hasOwnProperty("bio")){
-                                        if(bio_response.data.bio.hasOwnProperty("value")){
-                                            if(bio_response.data.bio.value.includes('([Source]')){
-                                                this.biography = bio_response.data.bio.value.split('([Source]')[0];
-                                            }else if(bio_response.data.bio.value == ''){
-                                                this.biography = '';
-                                            }else{
-                                                this.biography = bio_response.data.bio.value;
-                                            }
+                                key = response.data.docs[0].key
+                                this.top_work = response.data.docs[0].top_work;
+                                axios.get("https://openlibrary.org/authors/"+key+"/works.json").then(final_response => {
+                                    this.entries = final_response.data.entries;
+                                    this.num = this.entries.length;
+                                    this.entries_array = new Array();
+                                    for(let i=0; i< this.num; i++){
+                                        let entries_object = new Object();
+                                        if (Object.values(entries_object).indexOf(this.entries[i].title) <= -1){
+                                            entries_object.title = this.entries[i].title;
+                                            entries_object.cover = this.entries[i].covers;
+                                            this.entries_array.push(entries_object);
                                         }
-                                    }else{
-                                        this.biography = '';
                                     }
-                                    this.birth_date = bio_response.data.birth_date;
-                                    this.death_date = bio_response.data.death_date;
-                                    this.wiki_url = bio_response.data.wikipedia;
-                                    this.profile_img = bio_response.data.photos[0];
-                                }
-                            })
+                                })
+                                axios.get("https://openlibrary.org/authors/"+key+".json").then(bio_response => {
+                                    if(bio_response != 'undefined' || bio_response != '' ){
+                                        if(bio_response.data.hasOwnProperty("bio")){
+                                            if(bio_response.data.bio.hasOwnProperty("value")){
+                                                if(bio_response.data.bio.value.includes('([Source]')){
+                                                    this.biography = bio_response.data.bio.value.split('([Source]')[0];
+                                                }else if(bio_response.data.bio.value == ''){
+                                                    this.biography = '';
+                                                }else{
+                                                    this.biography = bio_response.data.bio.value;
+                                                }
+                                            }
+                                        }else{
+                                            this.biography = '';
+                                        }
+                                        this.birth_date = bio_response.data.birth_date;
+                                        this.death_date = bio_response.data.death_date;
+                                        this.wiki_url = bio_response.data.wikipedia;
+                                        this.profile_img = bio_response.data.photos[0];
+                                    }
+                                })
+                            }else{
+                                this.error = "The author you're looking for doen't exist";
+                                
+                                //styles
+                                 this.display= "none";
+                                //end styles
+                            }
                         })
                     }
                 },
