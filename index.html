@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <style>
+            body{
+                margin: 10px 20px;
+                padding:10px;
+                font-family: Georgia, serif;
+            }
+            #search_bar{
+                text-align: center;
+                padding: 50px 20px;
+                margin: 20px;
+            }
+            #bio{
+                border: 1px solid black;
+            }
+            .top_work{
+                color: #FF8C00;
+                font-size:1.2rem;
+            }
+            a {
+                outline: none;
+                text-decoration: none;
+                padding: 2px 1px 0;
+            }
+
+            a:link {
+                color: #265301;
+            }
+
+            a:visited {
+                color: #437A16;
+            }
+
+            a:focus {
+                border-bottom: 1px solid;
+                background: #BAE498;
+            }
+
+            a:hover {
+                border-bottom: 1px solid;
+                background: #CDFEAA;
+            }
+
+            a:active {
+                background: #265301;
+                color: #CDFEAA;
+            }
+        </style>
+
+        <div id="app">
+            <!-- search bar -->
+            <div class="pt-2 relative mx-auto text-gray-600" id="search_bar">
+                <input class="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none"
+                  type="search" name="search" placeholder="Search"
+                  v-model="author" v-on:keyup.enter="search()">
+                <button type="submit" class="absolute right-0 top-0 mt-5 mr-4">
+                  <svg class="text-gray-600 h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px"
+                    viewBox="0 0 56.966 56.966" style="enable-background:new 0 0 56.966 56.966;" xml:space="preserve"
+                    width="512px" height="512px">
+                    <path
+                      d="M55.146,51.887L41.588,37.786c3.486-4.144,5.396-9.358,5.396-14.786c0-12.682-10.318-23-23-23s-23,10.318-23,23  s10.318,23,23,23c4.761,0,9.298-1.436,13.177-4.162l13.661,14.208c0.571,0.593,1.339,0.92,2.162,0.92  c0.779,0,1.518-0.297,2.079-0.837C56.255,54.982,56.293,53.08,55.146,51.887z M23.984,6c9.374,0,17,7.626,17,17s-7.626,17-17,17  s-17-7.626-17-17S14.61,6,23.984,6z" />
+                  </svg>
+                </button>
+            </div>
+            <!--end of search bar-->
+            <div id="response" v-bind:style="{display: computedDisplay }">
+                <div id="">
+                    <figure class="overflow-hidden shadow-lg rounded-xl p-8">
+                        <img class="w-32 h-32 rounded-full mx-auto" :src="'https://covers.openlibrary.org/a/id/'+profile_img+'-M.jpg'" alt="" width="384" height="512">
+                        <div class="pt-6 text-center space-y-4">
+                        <blockquote>
+                            <p class="text-lg font-semibold">
+                                {{ biography }}
+                            </p>
+                        </blockquote>
+                        <figcaption class="font-medium">
+                            <div v-if="top_work" class="text-cyan-600 top_work">
+                                <span>Top work: {{top_work}}</span>
+                            </div>
+                            <div class="text-gray-500">
+                                <span v-if="birth_date">Birth date: {{birth_date}}</span><br/>
+                                <span v-if="death_date">Death date: {{death_date}}</span><br/>
+                                <a v-if="wiki_url" :href="wiki_url">link to wikipedia page</a>
+                            </div>
+                        </figcaption>
+                        </div>
+                    </figure>
+                </div>
+                <hr>
+                <div class="p-10 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+                    <div v-for="entry in entries_array">
+                        <div class="rounded overflow-hidden shadow-lg">
+                            <div v-if="entry.cover != 'undefined' || entry.cover != ''">
+                                <img class="w-full" :src="'https://covers.openlibrary.org/b/id/'+entry.cover+'-M.jpg'" alt="Mountain">
+                            </div>
+                            <div class="px-6 py-4">
+                                <div class="font-bold text-xl mb-2">{{ entry.title }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+        <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+        <script>
+            new Vue({
+                el: '#app',
+                computed:{
+                    computedDisplay: function(){
+                        return this.display;
+                    },
+                },
+                data () {
+                    return {
+                        display: "none",
+                        author: "",
+                        biography: "",
+                        entries:"",
+                        entries_array : [],
+                        num: 0,
+                        birth_date: "",
+                        death_date: "",
+                        wiki_url: "",
+                        top_work:"",
+                        profile_img:""
+                    }
+                },
+                methods:{
+                    search: function(){
+                        const url = "https://openlibrary.org/search/authors.json?q="+this.author;
+                        var key ="";
+                        axios.get(url).then(response => {
+                            //styles
+                            this.display= "inline-block";
+                            //end styles
+
+                            key = response.data.docs[0].key
+                            this.top_work = response.data.docs[0].top_work;
+                            axios.get("https://openlibrary.org/authors/"+key+"/works.json").then(final_response => {
+                                this.entries = final_response.data.entries;
+                                this.num = this.entries.length;
+                                this.entries_array = new Array();
+                                for(let i=0; i< this.num; i++){
+                                    let entries_object = new Object();
+                                    if (Object.values(entries_object).indexOf(this.entries[i].title) <= -1){
+                                        entries_object.title = this.entries[i].title;
+                                        entries_object.cover = this.entries[i].covers;
+                                        this.entries_array.push(entries_object);
+                                    }
+                                }
+                            })
+                            axios.get("https://openlibrary.org/authors/"+key+".json").then(bio_response => {
+                                if(bio_response != 'undefined' || bio_response != '' ){
+                                    if(bio_response.data.hasOwnProperty("bio")){
+                                        if(bio_response.data.bio.hasOwnProperty("value")){
+                                            if(bio_response.data.bio.value.includes('([Source]')){
+                                                this.biography = bio_response.data.bio.value.split('([Source]')[0];
+                                            }else if(bio_response.data.bio.value == ''){
+                                                this.biography = '';
+                                            }else{
+                                                this.biography = bio_response.data.bio.value;
+                                            }
+                                        }
+                                    }else{
+                                        this.biography = '';
+                                    }
+                                    this.birth_date = bio_response.data.birth_date;
+                                    this.death_date = bio_response.data.death_date;
+                                    this.wiki_url = bio_response.data.wikipedia;
+                                    this.profile_img = bio_response.data.photos[0];
+                                }
+                            })
+                        })
+                    }
+                },
+            })
+        </script>
+    </body>
+</html>
